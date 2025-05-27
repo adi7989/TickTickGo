@@ -17,6 +17,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const editTaskDueDate = document.getElementById('editTaskDueDate');
     const editTaskCategory = document.getElementById('editTaskCategory');
     const saveTaskBtn = document.getElementById('saveTaskBtn');
+    
+    // Check if device is mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Add a class to body for mobile-specific styling
+    if (isMobile) {
+        document.body.classList.add('mobile-device');
+    }
+    
+    // Variables for touch events
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let currentSwipeItem = null;
 
     // Set today as the default due date
     const today = new Date();
@@ -67,8 +80,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize the app
     function init() {
-        renderTasks();
-        updateTaskCount();
+        // Add loading state
+        document.body.classList.add('loading');
+        
+        // Simulate loading for smoother experience
+        setTimeout(() => {
+            renderTasks();
+            updateTaskCount();
+            document.body.classList.remove('loading');
+        }, 300);
+        
+        // Handle orientation changes
+        window.addEventListener('orientationchange', () => {
+            // Add a small delay to let the browser adjust
+            setTimeout(() => {
+                // Refresh the UI after orientation change
+                renderTasks();
+            }, 200);
+        });
     }
 
     // Function to add a new task
@@ -143,6 +172,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const li = document.createElement('li');
         li.className = 'task-item';
         li.dataset.id = task.id;
+        
+        // Add touch event listeners for swipe actions on mobile
+        if (isMobile) {
+            li.addEventListener('touchstart', handleTouchStart, false);
+            li.addEventListener('touchmove', handleTouchMove, false);
+            li.addEventListener('touchend', handleTouchEnd, false);
+        }
 
         // Create checkbox
         const checkbox = document.createElement('input');
@@ -334,5 +370,82 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             return 'due-date';
         }
+    }
+    
+    // Touch event handlers for swipe actions
+    function handleTouchStart(e) {
+        touchStartX = e.touches[0].clientX;
+        currentSwipeItem = this;
+        this.classList.add('swiping');
+    }
+    
+    function handleTouchMove(e) {
+        if (!touchStartX || !currentSwipeItem) {
+            return;
+        }
+        
+        touchEndX = e.touches[0].clientX;
+        const diffX = touchStartX - touchEndX;
+        
+        // If swiping left (for delete)
+        if (diffX > 50) {
+            currentSwipeItem.style.transform = `translateX(-${Math.min(diffX, 100)}px)`;
+            currentSwipeItem.style.opacity = 1 - (diffX / 200);
+        }
+        // If swiping right (for complete)
+        else if (diffX < -50) {
+            currentSwipeItem.style.transform = `translateX(${Math.min(Math.abs(diffX), 100)}px)`;
+            currentSwipeItem.style.opacity = 1 - (Math.abs(diffX) / 200);
+        }
+    }
+    
+    function handleTouchEnd(e) {
+        if (!currentSwipeItem) return;
+        
+        const diffX = touchStartX - touchEndX;
+        
+        // Reset styles
+        currentSwipeItem.style.transform = '';
+        currentSwipeItem.style.opacity = '';
+        currentSwipeItem.classList.remove('swiping');
+        
+        // If swiped left far enough (delete)
+        if (diffX > 100) {
+            currentSwipeItem.classList.add('delete-animation');
+            setTimeout(() => {
+                deleteTask(currentSwipeItem.dataset.id);
+            }, 300);
+        }
+        // If swiped right far enough (toggle completion)
+        else if (diffX < -100) {
+            const taskId = currentSwipeItem.dataset.id;
+            const checkbox = currentSwipeItem.querySelector('.task-checkbox');
+            checkbox.checked = !checkbox.checked;
+            toggleTaskCompletion(taskId);
+            currentSwipeItem.classList.add('task-complete-animation');
+            setTimeout(() => {
+                currentSwipeItem.classList.remove('task-complete-animation');
+            }, 300);
+        }
+        
+        // Reset touch variables
+        touchStartX = 0;
+        touchEndX = 0;
+        currentSwipeItem = null;
+    }
+    
+    // Add resize event listener to handle orientation changes
+    window.addEventListener('resize', () => {
+        // Adjust UI for the new screen size if needed
+        if (window.innerWidth <= 480) {
+            document.body.classList.add('mobile-small');
+        } else {
+            document.body.classList.remove('mobile-small');
+        }
+    });
+    
+    // Initial check for small screens
+    if (window.innerWidth <= 480) {
+        document.body.classList.add('mobile-small');
     }
 });
