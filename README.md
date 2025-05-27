@@ -70,16 +70,3 @@ Each breakpoint includes specific UI adjustments to ensure optimal usability reg
 ## Screenshots
 ![alt text](<Screenshot 2025-05-27 222803.png>)
 
-## Future Enhancements
-Potential future improvements could include:
-- Task sorting options (by date, priority, etc.)
-- Subtasks and nested task lists
-- Dark/light theme toggle
-- Task sharing capabilities
-- Notifications for upcoming due dates
-- Drag and drop reordering
-- Cloud synchronization
-
-## Credits
-- Font Awesome for icons
-- Google Fonts for typography
